@@ -19,11 +19,11 @@ Before using the script, make sure you have Python 3.x installed on your system.
 ### Installation
 1. Clone this repository or download the script directly.
 
-`git clone https://github.com/mir-pias/periodic_folder_sync.git`
+    `git clone https://github.com/mir-pias/periodic_folder_sync.git`
 
 2. Navigate to the script's directory.
 
-`cd periodic_folder_sync`
+    `cd periodic_folder_sync`
 
 ### Command Line Usage
 Run the script from the command line with the following arguments:
@@ -38,6 +38,17 @@ Example:
 
 This command will synchronize the source folder with the replica folder every 3600 seconds (1 hour) and log events to sync.log.
 
+### test script
+the `test_script.py` was used to test the functionality of the `sync_folders.py` script. To use it, follow these steps: 
+
+1. Install pytest by running the following command:
+
+    `pip install -r requirements.txt`
+
+2. Run the script from command line with:
+
+    `pytest test_script.py`
+
 ### Behavior
 - The script will create the replica folder if it does not exist.
 - During the first synchronization, it will copy all files and folders from the source to the replica.
@@ -48,3 +59,5 @@ This command will synchronize the source folder with the replica folder every 36
 
 ### Customization
 You can customize the behavior of the script by modifying the source code directly. For example, you can change the log format, adjust the checksum method, or add additional synchronization rules.
+
+
