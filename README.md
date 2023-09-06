@@ -1,5 +1,4 @@
 # periodic_folder_sync
-test task for the position of Developer in QA with Python
 
 This Python script can be used to synchronize two folders periodically. It monitors a source folder for changes and updates a replica folder to match the source folder's contents. the user can specify the source and replica folder paths, the sync interval, and log file path.
 
