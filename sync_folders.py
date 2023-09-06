@@ -4,7 +4,6 @@ import shutil
 import hashlib
 import argparse
 import logging
-import concurrent.futures
 
 # MD5 checksum
 def get_file_checksum(file_path):
@@ -16,39 +15,6 @@ def get_file_checksum(file_path):
                 break
             hasher.update(chunk)
     return hasher.hexdigest()
-
-
-def are_directories_equal(src_dir, replica_dir):
-    """
-    Compare MD5 checksums of files in two directories.
-    """
-    src_files = {}
-    replica_files = {}
-
-    # Generate MD5 checksums for files in the source directory
-    for root, _, files in os.walk(src_dir):
-        for file in files:
-            file_path = os.path.join(root, file)
-            src_files[file_path] = get_file_checksum(file_path)
-
-    # Generate MD5 checksums for files in the replica directory
-    for root, _, files in os.walk(replica_dir):
-        for file in files:
-            file_path = os.path.join(root, file)
-            replica_files[file_path] = get_file_checksum(file_path)
-
-
-    print(src_files)
-    print(replica_files)
-
-    # Compare the MD5 checksums of files in both directories
-    for file_path, src_checksum in src_files.items():
-        replica_checksum = replica_files.get(file_path.replace("source","replica") )
-        print(replica_checksum, src_checksum)
-        if replica_checksum is None or src_checksum is None or src_checksum != replica_checksum:
-            return False
-
-    return True
 
 # Track file/folder creation in the source folder after first sync and log it 
 def track_source_changes(source_folder, sync_interval, logger, first_sync=False):  
@@ -69,8 +35,6 @@ def track_source_changes(source_folder, sync_interval, logger, first_sync=False)
 
 # copy files and folders from source to replica
 def copy_files_and_folders(source_folder, replica_folder, logger, sync_interval, first_sync):
-
-
     track_source_changes(source_folder, sync_interval, logger, first_sync)
 
     for item in os.listdir(source_folder):
@@ -82,7 +46,7 @@ def copy_files_and_folders(source_folder, replica_folder, logger, sync_interval,
             if not os.path.exists(replica_path):
                 shutil.copytree(source_path, replica_path)
                 logger.info(f"Copied: {source_path} to {replica_path}")
-            # if root folder exists, go into the folder and repeat the process
+            # if root folder exists, recursive function call on the root
             else:
                 copy_files_and_folders(source_path, replica_path, logger, sync_interval, first_sync)            
                 
@@ -90,11 +54,8 @@ def copy_files_and_folders(source_folder, replica_folder, logger, sync_interval,
         elif os.path.isfile(source_path):
             if not os.path.exists(replica_path) or get_file_checksum(source_path) != get_file_checksum(replica_path):
                 shutil.copy2(source_path, replica_path)
-                # track_source_changes(source_path, sync_interval, logger, first_sync)
                 logger.info(f"Copied: {source_path} to {replica_path}")
     
-
-
 # delete files and folders from replica if its not found in source
 def del_files_and_folders(source_folder, replica_folder, logger):
     for item in os.listdir(replica_folder):
@@ -116,27 +77,14 @@ def del_files_and_folders(source_folder, replica_folder, logger):
             os.remove(replica_path)
             logger.info(f"Removed file: {replica_path}")
             
-    
-
 # Sync source to replica folder
 def sync_folders(source_folder, replica_folder, logger, sync_interval, first_sync):
-    
     if not os.path.exists(replica_folder):
         os.mkdir(replica_folder)
-
-    # track_source_changes(source_folder, sync_interval, logger, first_sync)
-
-    # with concurrent.futures.ThreadPoolExecutor(max_workers=4) as copy_executor, concurrent.futures.ThreadPoolExecutor(max_workers=4) as remove_executor:
-    #     copy_future = copy_executor.submit(copy_files_and_folders, source_folder, replica_folder, logger, sync_interval, first_sync)
-    #     remove_future = remove_executor.submit(del_files_and_folders, source_folder, replica_folder, logger)
-    #     concurrent.futures.wait([copy_future, remove_future])
 
     copy_files_and_folders(source_folder, replica_folder, logger, sync_interval, first_sync)
     
     del_files_and_folders(source_folder, replica_folder, logger)
-
-    # print(are_directories_equal(source_folder,replica_folder))
-
 
 def main():
     parser = argparse.ArgumentParser(description="Synchronize two folders periodically.")
@@ -148,7 +96,7 @@ def main():
     
     first_sync = True  # Track file/folder creation only after the first synchronization
 
-    # init file logger
+    # init logger
     logging.basicConfig(filename=args.log_file, level=logging.INFO, format="%(asctime)s - %(message)s", datefmt='%Y-%m-%d %H:%M:%S')
     logger = logging.getLogger(__name__)
 

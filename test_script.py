@@ -6,7 +6,7 @@ import subprocess
 import pytest
 import filecmp
 
-# Constants for test folders and files
+# Constants for test folders and log file
 SOURCE_DIR = "source_folder"
 REPLICA_DIR = "replica_folder"
 LOG_FILE = "test_log.txt"
@@ -30,20 +30,17 @@ def check_folders(src_dir, replica_dir):
             file_path = os.path.join(root, file)
             replica_files[file_path] = get_file_checksum(file_path)
 
-    # print(src_files, replica_files)
     # Compare the MD5 checksums of files in both directories
     for file_path, src_checksum in src_files.items():
-        # print(file_path)
         replica_checksum = replica_files.get(file_path.replace(src_dir,replica_dir))
-        # print(file_path.replace(SOURCE_DIR,REPLICA_DIR))
         if replica_checksum is None or src_checksum is None or src_checksum != replica_checksum:
             return False
 
     return True
 
+ # Create source and replica folders for testing
 @pytest.fixture
 def setup_test_folders():
-    # Create source and replica folders for testing
     if not os.path.exists(SOURCE_DIR):
         os.mkdir(SOURCE_DIR)
 
@@ -62,8 +59,8 @@ def setup_test_folders():
     if os.path.exists(LOG_FILE):
         os.remove(LOG_FILE)
 
+# Run the sync script with a short interval
 def test_basic_synchronization(setup_test_folders):
-    # Run the synchronization script with a short interval
     sync_process = subprocess.Popen(
         ["python", "sync_folders.py", SOURCE_DIR, REPLICA_DIR, "1", LOG_FILE]
     )
@@ -74,7 +71,6 @@ def test_basic_synchronization(setup_test_folders):
     assert filecmp.dircmp(SOURCE_DIR, REPLICA_DIR) and check_folders(SOURCE_DIR, REPLICA_DIR)
 
 def test_file_creation(setup_test_folders):
-    # Run the synchronization script with a short interval
     sync_process = subprocess.Popen(
         ["python", "sync_folders.py", SOURCE_DIR, REPLICA_DIR, "1", LOG_FILE]
     )
@@ -93,7 +89,6 @@ def test_file_creation(setup_test_folders):
     assert os.path.exists(os.path.join(REPLICA_DIR, "new_file.txt"))
 
 def test_file_deletion(setup_test_folders):
-    # Run the synchronization script with a short interval
     sync_process = subprocess.Popen(
         ["python", "sync_folders.py", SOURCE_DIR, REPLICA_DIR, "1", LOG_FILE]
     )
@@ -111,7 +106,6 @@ def test_file_deletion(setup_test_folders):
     assert not os.path.exists(os.path.join(REPLICA_DIR, "file1.txt"))
 
 def test_file_modification(setup_test_folders):
-    # Run the synchronization script with a short interval
     sync_process = subprocess.Popen(
         ["python", "sync_folders.py", SOURCE_DIR, REPLICA_DIR, "1", LOG_FILE]
     )
@@ -133,8 +127,8 @@ def test_file_modification(setup_test_folders):
         source_content = source_file.read()
     assert replica_content == source_content
 
+# test sync of nested folders and files in the source directory
 def test_nested_folders(setup_test_folders):
-    # Create nested folders and files in the source directory
     os.mkdir(os.path.join(SOURCE_DIR, "subfolder"))
     with open(os.path.join(SOURCE_DIR, "subfolder", "nested_file.txt"), "w") as f:
         f.write("Nested file")
@@ -151,7 +145,6 @@ def test_nested_folders(setup_test_folders):
     assert os.path.exists(os.path.join(REPLICA_DIR, "subfolder", "nested_file.txt"))
 
 def test_multiple_file_operations(setup_test_folders):
-    # Run the synchronization script with a short interval
     sync_process = subprocess.Popen(
         ["python", "sync_folders.py", SOURCE_DIR, REPLICA_DIR, "1", LOG_FILE]
     )
@@ -185,7 +178,6 @@ def test_multiple_file_operations(setup_test_folders):
 
 
 def test_logging_to_file(setup_test_folders):
-    # Run the synchronization script with a short interval
     sync_process = subprocess.Popen(
         ["python", "sync_folders.py", SOURCE_DIR, REPLICA_DIR, "1", LOG_FILE]
     )
@@ -199,7 +191,6 @@ def test_logging_to_file(setup_test_folders):
     assert "Copied" in log_content
 
 def test_logging_to_console(setup_test_folders):
-    # Run the synchronization script with a short interval and capture console output
     sync_process = subprocess.Popen(
         ["python", "sync_folders.py", SOURCE_DIR, REPLICA_DIR, "1", LOG_FILE],
         stdout=subprocess.PIPE,
@@ -213,8 +204,8 @@ def test_logging_to_console(setup_test_folders):
     output = stdout.decode("utf-8") + stderr.decode("utf-8")
     assert "Copied" in output
 
+# Run the sync script with different replica folder, interval, and log file
 def test_command_line_arguments(setup_test_folders):
-    # Run the synchronization script with different replica folder, interval, and log file
     sync_process = subprocess.Popen(
         [
             "python",
@@ -239,8 +230,8 @@ def test_command_line_arguments(setup_test_folders):
     if os.path.exists('custom_log.txt'):
         os.remove('custom_log.txt')
 
+# Run the sync script with incorrect folder paths
 def test_error_handling(setup_test_folders):
-    # Run the synchronization script with incorrect folder paths
     sync_process = subprocess.Popen(
         ["python", "sync_folders.py", "nonexistent_source", "nonexistent_replica", "1", LOG_FILE]
     )
@@ -253,9 +244,8 @@ def test_error_handling(setup_test_folders):
     if os.path.exists("nonexistent_replica"):
         shutil.rmtree("nonexistent_replica")
 
-
+# test sync of a large number of files and folders 
 def test_performance(setup_test_folders):
-    # Create a large number of files and folders in the source directory
     for i in range(100):
         os.mkdir(os.path.join(SOURCE_DIR, f"folder_{i}"))
         with open(os.path.join(SOURCE_DIR, f"file_{i}.txt"), "w") as f:
@@ -271,8 +261,8 @@ def test_performance(setup_test_folders):
     # Check if the replica folder matches the source folder
     assert filecmp.dircmp(SOURCE_DIR, REPLICA_DIR) and check_folders(SOURCE_DIR, REPLICA_DIR)
 
+# Create a second set of source and replica folders for concurrent testing
 def test_concurrency(setup_test_folders):
-    # Create a second set of source and replica folders for concurrent testing
     os.mkdir("source_folder2")
     # os.mkdir("replica_folder2")
 
@@ -300,7 +290,6 @@ def test_concurrency(setup_test_folders):
         os.remove("log_file2.txt")
 
 def test_resource_usage(setup_test_folders):
-    # Run the synchronization script with a short interval while measuring resource usage
     start_time = time.time()
     sync_process = subprocess.Popen(
         ["python", "sync_folders.py", SOURCE_DIR, REPLICA_DIR, "1", LOG_FILE]
@@ -313,7 +302,6 @@ def test_resource_usage(setup_test_folders):
     assert end_time - start_time < 10
 
 def test_cross_platform_compatibility(setup_test_folders): ## tested only on windows
-    # Run the synchronization script on different operating systems
     os_name = os.name
     if os_name == "posix":
         # Linux and macOS
@@ -334,8 +322,8 @@ def test_cross_platform_compatibility(setup_test_folders): ## tested only on win
     # Check if the replica folder matches the source folder on the respective OS
     assert filecmp.dircmp(SOURCE_DIR, REPLICA_DIR) and check_folders(SOURCE_DIR, REPLICA_DIR)
 
+# Run the sync script with empty source and replica folders
 def test_edge_cases(setup_test_folders):
-    # Run the synchronization script with empty source and replica folders
     empty_source_dir = os.path.join(SOURCE_DIR, "empty_source")
     empty_replica_dir = os.path.join(REPLICA_DIR, "empty_replica")
     os.mkdir(empty_source_dir)
